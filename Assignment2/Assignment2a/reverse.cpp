@@ -6,59 +6,56 @@ st135699@student.spbu.ru
 ## Description
 Home assingment 2a*/
 
+#include "reverse.h"
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 #include <string>
-#include <sys/stat.h>
 
 namespace file_operations {
 
-  off_t getFileSize(const char *filename) {
-    struct stat fileInfo;
-    if (stat(filename, &fileInfo) == 0) 
-      return fileInfo.st_size;
-    return -1;
-  }
+    void reverseFileContent() {
+        std::string inputFile = "input.txt";
+        if (!std::filesystem::exists(inputFile)) {
+            std::cerr << "File not found: " << inputFile << "\n";
+            return;
+        }
 
-  void reverseFileContent(){
-    std::string inputFile;
-    std::cout << "Enter the file path: ";
-    std::cin >> inputFile;
+        std::uintmax_t fileSize = std::filesystem::file_size(inputFile);
 
-    off_t fileSize = getFileSize(inputFile.c_str());
+        std::ifstream infile(inputFile, std::ios::binary | std::ios::in);
+        if (!infile) {
+            std::cerr << "Failed to open file: " << inputFile << "\n";
+            return;
+        }
 
-    std::ifstream file(inputFile, std::ios::binary | std::ios::ate);
-    if (!file) {
-      std::cerr << "Failed to open file: " << inputFile << "\n";
-      return;
+        char* buffer = new char[fileSize];
+
+        if (!infile.read(buffer, fileSize)) {
+            std::cerr << "Error reading file: " << inputFile << "\n";
+            delete[] buffer;
+            infile.close();
+            return;
+        }
+        infile.close();
+
+        for (std::uintmax_t i = 0; i < fileSize / 2; ++i) {
+            std::swap(buffer[i], buffer[fileSize - 1 - i]);
+        }
+
+        std::string outputFile = "reversed_" + inputFile;
+
+        std::ofstream outfile(outputFile, std::ios::binary | std::ios::out);
+        if (!outfile) {
+            std::cerr << "Failed to create output file: " << outputFile << "\n";
+            delete[] buffer;
+            return;
+        }
+        outfile.write(buffer, fileSize);
+        outfile.close();
+
+        delete[] buffer;
+
+        std::cout << "File has been reversed successfully. Output file: " << outputFile << "\n";
     }
-
-    char* dataBuffer = new char[fileSize];
-
-    if (!file.read(dataBuffer, fileSize)) {
-      std::cerr << "Error reading file: " << inputFile << "\n";
-      delete[] dataBuffer;
-      return;
-    }
-    file.close();
-
-    for (std::streamsize i = 0; i < fileSize / 2; ++i) {
-        std::swap(dataBuffer[i], dataBuffer[fileSize - 1 - i]);
-    }
-
-    std::string outputFile = "reversed_" + inputFile;
-
-    std::ofstream outFile(outputFile, std::ios::binary);
-    if (!outFile) {
-      std::cerr << "Failed to create output file: " << outputFile << "\n";
-      delete[] dataBuffer;
-      return;
-    }
-    outFile.write(dataBuffer, fileSize);
-    outFile.close();
-
-    delete[] dataBuffer;
-
-    std::cout << "File has been reversed successfully. Output file: " << outputFile << "\n";
-  }
 }
